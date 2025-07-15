@@ -1,0 +1,9 @@
+{
+    "DatabaseConfig": {
+      "Host": "localhost",
+      "Port": "5432",
+      "Username": "admin",
+      "Password": "admin",
+      "Database": "paymentsdb"
+    }
+  }
