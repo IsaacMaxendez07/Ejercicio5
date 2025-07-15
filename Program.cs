@@ -354,7 +354,7 @@ class Program
         }
 
         Console.Write("Ingrese el número de la factura que desea eliminar, o 0 para cancelar: ");
-        int newDelete = int.Parse(Console.ReadLine()!); // Advertencia CS8604 solucionada
+        int newDelete = int.Parse(Console.ReadLine()!); 
 
         if (newDelete == 0)
         {
