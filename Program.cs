@@ -49,7 +49,8 @@ class Program
             Console.WriteLine("3. Ver balance de cuentas");
             Console.WriteLine("4. Añadir cuenta");
             Console.WriteLine("5. Pagar facturas");
-            Console.WriteLine("6. Salir");
+            Console.WriteLine("6.Eliminar facturas");
+            Console.WriteLine("7. Salir");
             Console.Write("Elige una opción: ");
             string option = Console.ReadLine();
 
@@ -76,6 +77,10 @@ class Program
                     break;
 
                 case "6":
+                    DeleteInvoices(); // Este es la nueva opcion que hemos hecho
+                    break; 
+
+                case "7":
                     Console.WriteLine("Saliendo del programa...");
                     usingMachine = false;
                     break;
@@ -98,7 +103,7 @@ class Program
             .AddJsonFile("json/settings.json", optional: false, reloadOnChange: true);// Agrega archivo JSON obligatorio
 
         Configuration = builder.Build();
-            //usa los valores del archivo JSON
+        //usa los valores del archivo JSON
         connectionString = $"Host={Configuration["DatabaseConfig:Host"]};" +
                            $"Port={Configuration["DatabaseConfig:Port"]};" +
                            $"Username={Configuration["DatabaseConfig:Username"]};" +
@@ -177,7 +182,7 @@ class Program
 
         Console.WriteLine("Factura añadida correctamente.");
     }
-       // Bloque 3 mostrar los balances de todas las cuentas bancarias
+    // Bloque 3 mostrar los balances de todas las cuentas bancarias
     static void ViewAccountBalances()
     {
         Console.WriteLine("\nBalance de cuentas:");
@@ -205,7 +210,7 @@ class Program
         string accountName = Console.ReadLine();
 
         Console.Write("Balance de la cuenta: ");
-        decimal accountBalance = decimal.Parse(Console.ReadLine()); 
+        decimal accountBalance = decimal.Parse(Console.ReadLine());
 
         using (var connection = new NpgsqlConnection(connectionString))
         {
@@ -221,7 +226,7 @@ class Program
 
         Console.WriteLine("Cuenta añadida correctamente.");
     }
-// Bloque 5 permitir pagar facturas y descontar el total de una cuenta bancaria
+    // Bloque 5 permitir pagar facturas y descontar el total de una cuenta bancaria
     static void PayInvoices()
     {
         Console.WriteLine("\nSelecciona las facturas que deseas pagar:");
@@ -246,6 +251,13 @@ class Program
                 }
             }
         }
+
+        //////////////////////////////////////////////////////////
+        /*   Aqui estamos colocando la nueva opcion */
+
+
+
+
         // Bloque 6 Selección de facturas a pagar
 
         Console.Write("Ingresa el número de la factura a pagar o 0 para cancelar: ");
@@ -313,7 +325,64 @@ class Program
             }
         }
     }
+    
+      static void DeleteInvoices()
+    {
+        Console.WriteLine("\nEliminar facturas:"); // Añadí un salto de línea para mejor formato
+        List<int> invoiceIdsToDelete = new List<int>();
+
+        using (var connection = new NpgsqlConnection(connectionString))
+        {
+            connection.Open();
+            string query = "SELECT paymentid, paymentdescription, paymentamount FROM payments";
+            using (var command = new NpgsqlCommand(query, connection))
+            using (var reader = command.ExecuteReader())
+            {
+                int index = 1;
+                if (!reader.HasRows) // Añadido para manejar el caso de no facturas
+                {
+                    Console.WriteLine("No hay facturas para eliminar.");
+                    return;
+                }
+                while (reader.Read())
+                {
+                    Console.WriteLine($"{index}. {reader["paymentdescription"]} - Monto: {reader["paymentamount"]}");
+                    invoiceIdsToDelete.Add((int)reader["paymentid"]);
+                    index++;
+                }
+            }
+        }
+
+        Console.Write("Ingrese el número de la factura que desea eliminar, o 0 para cancelar: ");
+        int newDelete = int.Parse(Console.ReadLine()!); // Advertencia CS8604 solucionada
+
+        if (newDelete == 0)
+        {
+            Console.WriteLine("Operación Cancelada.");
+        }
+        else if (newDelete > 0 && newDelete <= invoiceIdsToDelete.Count)
+        {
+            int IdDeFacturaAEliminar = invoiceIdsToDelete[newDelete - 1];
+            using (var connection = new NpgsqlConnection(connectionString))
+            {
+                connection.Open();
+                string query = "DELETE FROM payments WHERE paymentid = @parametroAEliminar";
+                using (var command = new NpgsqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@parametroAEliminar", IdDeFacturaAEliminar);
+                    command.ExecuteNonQuery();
+                    Console.WriteLine("Factura eliminada correctamente.");
+                }
+            }
+        }
+        else
+        {
+            Console.WriteLine("Número de factura no válido. Por favor, intenta de nuevo.");
+        }
+    }
+
 }
+
 
 
 

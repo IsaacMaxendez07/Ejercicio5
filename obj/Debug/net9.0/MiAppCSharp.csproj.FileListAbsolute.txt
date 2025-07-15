@@ -25,3 +25,4 @@
 /home/isaac/Escritorio/Ejercicios de C#/MiAppCSharp/bin/Debug/net9.0/Npgsql.dll
 /home/isaac/Escritorio/Ejercicios de C#/MiAppCSharp/obj/Debug/net9.0/MiAppCSharp.csproj.AssemblyReference.cache
 /home/isaac/Escritorio/Ejercicios de C#/MiAppCSharp/obj/Debug/net9.0/MiAppCSh.30A0D846.Up2Date
+/home/isaac/Escritorio/Ejercicios de C#/MiAppCSharp/obj/Debug/net9.0/MiAppCSharp.sourcelink.json
