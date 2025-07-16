@@ -98,36 +98,44 @@ class Program
 
     static void LoadConfiguration()
     {
-        var builder = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())// Establece el directorio base
-            .AddJsonFile("json/settings.json", optional: false, reloadOnChange: true);// Agrega archivo JSON obligatorio
-
-        Configuration = builder.Build();
-        //usa los valores del archivo JSON
-        connectionString = $"Host={Configuration["DatabaseConfig:Host"]};" +
-                           $"Port={Configuration["DatabaseConfig:Port"]};" +
-                           $"Username={Configuration["DatabaseConfig:Username"]};" +
-                           $"Password={Configuration["DatabaseConfig:Password"]};" +
-                           $"Database={Configuration["DatabaseConfig:Database"]};";
-    }
-    // Quinto bloque 
-    /*En este bloque intentamos conectar con la base de datos y controlamos posibles errores de conexión mediante excepciones. */
-    static bool TryConnectToDatabase()
-    {
         try
         {
-            using (var connection = new NpgsqlConnection(connectionString))
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())// Establece el directorio base
+                .AddJsonFile("json/settings.json", optional: false, reloadOnChange: true);// Agrega archivo JSON obligatorio
+
+            Configuration = builder.Build();
+            //usa los valores del archivo JSON
+            connectionString = $"Host={Configuration["DatabaseConfig:Host"]};" +
+                               $"Port={Configuration["DatabaseConfig:Port"]};" +
+                               $"Username={Configuration["DatabaseConfig:Username"]};" +
+                               $"Password={Configuration["DatabaseConfig:Password"]};" +
+                               $"Database={Configuration["DatabaseConfig:Database"]};";
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Error al cargar la configuración: {e.Message}. El programa se cerrará.");
+            Environment.Exit(1); // El '1' indica que el programa terminó con un error.
+}
+    }
+    // Quinto bloque 
+        /*En este bloque intentamos conectar con la base de datos y controlamos posibles errores de conexión mediante excepciones. */
+    static bool TryConnectToDatabase()
+        {
+            try
             {
-                connection.Open();// Abre la conexión
-                return true;// Conexión exitosa
+                using (var connection = new NpgsqlConnection(connectionString))
+                {
+                    connection.Open();// Abre la conexión
+                    return true;// Conexión exitosa
+                }
+            }
+            catch (Exception ex)
+            {    // Muestra el mensaje de error en caso de fallo
+                Console.WriteLine($"Error de conexión: {ex.Message}");
+                return false;
             }
         }
-        catch (Exception ex)
-        {    // Muestra el mensaje de error en caso de fallo
-            Console.WriteLine($"Error de conexión: {ex.Message}");
-            return false;
-        }
-    }
     /*En este apartado comenzaremos de nuevo con el conteo de los bloques, ya que aquí definiremos la lógica del menú.*/
     /*Ademas debes de tomar en cuenta que veras lineas de codigo comentada solo una vez porque esa misma linea de codigo se repite*/
 
@@ -153,17 +161,32 @@ class Program
     }
     // Bloque 2 Añadir una nueva factura a la base de datos
     static void AddInvoice()
+
     {
-        Console.WriteLine("\nAñadir nueva factura:"); // Le damos la opción de agregar una factura
+         // Declara las variables fuera del try
+        string description;
+        decimal amount;
+        DateTime dueDate;
+        
+        try
+        {
+            Console.WriteLine("\nAñadir nueva factura:"); // Le damos la opción de agregar una factura
 
-        Console.Write("Descripción de la factura: "); // Leer descripción
-        string description = Console.ReadLine();
+            Console.Write("Descripción de la factura: "); // Leer descripción
+            description = Console.ReadLine();
 
-        Console.Write("Monto de la factura: ");
-        decimal amount = decimal.Parse(Console.ReadLine()); //Leer monto 
+            Console.Write("Monto de la factura: ");
+            amount = decimal.Parse(Console.ReadLine()); //Leer monto 
 
-        Console.Write("Fecha de vencimiento (yyyy-mm-dd): ");
-        DateTime dueDate = DateTime.Parse(Console.ReadLine());
+            Console.Write("Fecha de vencimiento (yyyy-mm-dd): ");
+            dueDate = DateTime.Parse(Console.ReadLine());
+        }
+
+        catch (FormatException ex)
+        {
+            Console.WriteLine("Error: El monto o la fecha ingresada no tienen el formato correcto. Asegúrate de usar números para el monto y el formato yyyy-mm-dd para la fecha.");
+            return;
+        }  
 
         using (var connection = new NpgsqlConnection(connectionString))
         {
@@ -208,10 +231,19 @@ class Program
 
         Console.Write("Nombre de la cuenta: ");
         string accountName = Console.ReadLine();
-
-        Console.Write("Balance de la cuenta: ");
-        decimal accountBalance = decimal.Parse(Console.ReadLine());
-
+        // Declara la variable fuera del try
+        decimal accountBalance; /* Esta tipo de dato lo tuve que declarar global porque la excepcion no la pillaba 
+         esto lo hice en todas las funciones que tuve que hacer una excepcion2*/
+        try
+        {
+            Console.Write("Balance de la cuenta: ");
+            accountBalance = decimal.Parse(Console.ReadLine());
+        }
+        catch (FormatException ex)
+        {
+            Console.WriteLine("Error: El balance de la cuenta no tiene un formato numérico válido. Por favor, ingresa un número.");
+            return;
+        }
         using (var connection = new NpgsqlConnection(connectionString))
         {
             connection.Open();
@@ -252,17 +284,16 @@ class Program
             }
         }
 
-        //////////////////////////////////////////////////////////
-        /*   Aqui estamos colocando la nueva opcion */
+      
 
 
 
 
-        // Bloque 6 Selección de facturas a pagar
+   
 
         Console.Write("Ingresa el número de la factura a pagar o 0 para cancelar: ");
-        int invoiceToPay = int.Parse(Console.ReadLine());
-
+        
+            int invoiceToPay = int.Parse(Console.ReadLine());
         while (invoiceToPay != 0)
         {
             if (invoiceToPay > 0 && invoiceToPay <= unpaidInvoiceIds.Count)
@@ -325,13 +356,15 @@ class Program
             }
         }
     }
+      //////////////////////////////////////////////////////////
+        /*   Aqui estamos colocando la nueva opcion */
     
       static void DeleteInvoices()
     {
-        Console.WriteLine("\nEliminar facturas:"); 
-        List<int> invoiceIdsToDelete = new List<int>();
+        Console.WriteLine("\nEliminar facturas:"); // Le pedimos al usuario la factura que quiere eliminar 
+        List<int> invoiceIdsToDelete = new List<int>();// aqui almacenamos los paymentid
 
-        using (var connection = new NpgsqlConnection(connectionString))
+        using (var connection = new NpgsqlConnection(connectionString)) // abrimos la base de datos 
         {
             connection.Open();
             string query = "SELECT paymentid, paymentdescription, paymentamount FROM payments";
@@ -354,8 +387,8 @@ class Program
         }
 
         Console.Write("Ingrese el número de la factura que desea eliminar, o 0 para cancelar: ");
-        int newDelete = int.Parse(Console.ReadLine()!); 
-
+        
+            int newDelete = int.Parse(Console.ReadLine()!);
         if (newDelete == 0)
         {
             Console.WriteLine("Operación Cancelada.");

@@ -9,6 +9,7 @@
       "MiAppCSharp/1.0.0": {
         "dependencies": {
           "Microsoft.Extensions.Configuration": "9.0.7",
+          "Microsoft.Extensions.Configuration.FileExtensions": "9.0.7",
           "Microsoft.Extensions.Configuration.Json": "9.0.7",
           "Npgsql": "9.0.3"
         },
