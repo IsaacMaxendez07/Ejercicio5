@@ -328,7 +328,7 @@ class Program
     
       static void DeleteInvoices()
     {
-        Console.WriteLine("\nEliminar facturas:"); // Añadí un salto de línea para mejor formato
+        Console.WriteLine("\nEliminar facturas:"); 
         List<int> invoiceIdsToDelete = new List<int>();
 
         using (var connection = new NpgsqlConnection(connectionString))
