@@ -50,7 +50,8 @@ class Program
             Console.WriteLine("4. Añadir cuenta");
             Console.WriteLine("5. Pagar facturas");
             Console.WriteLine("6.Eliminar facturas");
-            Console.WriteLine("7. Salir");
+            Console.WriteLine("7.Eliminar cuenta" );
+            Console.WriteLine("8. Salir");
             Console.Write("Elige una opción: ");
             string option = Console.ReadLine();
 
@@ -81,6 +82,10 @@ class Program
                     break; 
 
                 case "7":
+                    DeleteAccount(); //Estamos incluyendo la opción de eliminar la cuenta.
+                    break; 
+
+                case "8":
                     Console.WriteLine("Saliendo del programa...");
                     usingMachine = false;
                     break;
@@ -385,9 +390,118 @@ class Program
                 }
             }
         }
+        ////////////////////////////Nueva funcion de eliminar cuentas ///////////////////////////
+    
+    // Bloque 7 Eliminar cuenta bancaria
+       static void DeleteAccount()
+        {
+            Console.WriteLine("\nEliminar cuenta bancaria:");
+            List<int> accountIdsToDelete = new List<int>(); // Aquí almacenaremos los IDs de las cuentas
 
-        Console.Write("Ingrese el número de la factura que desea eliminar, o 0 para cancelar: ");
-        
+            using (var connection = new NpgsqlConnection(connectionString))
+            {
+                connection.Open();
+                string query = "SELECT accountid, accountname, accountbalance FROM bankaccount";
+                using (var command = new NpgsqlCommand(query, connection))
+                using (var reader = command.ExecuteReader())
+                {
+                    int index = 1;
+                    if (!reader.HasRows) // Añadido para manejar el caso de no facturas
+                    {
+                        Console.WriteLine("No hay cuentas para eliminar.");
+                        return;
+                    }
+                    while (reader.Read())
+                    {
+                        Console.WriteLine($"{index}. {reader["accountname"]} - Monto: {reader["accountbalance"]}");
+                        accountIdsToDelete.Add((int)reader["accountid"]);
+                        index++;
+                    }
+                }
+            }
+
+            Console.WriteLine("ingrese el número de la cuenta que desea eliminar");
+            Console.WriteLine("ingresar 0 para cancelar la operación");
+            string respuesta = Console.ReadLine();
+            int conversionExitosa;
+            if (!int.TryParse(respuesta, out conversionExitosa))
+            {
+                Console.WriteLine("Error: La entrada no es un número válido. Por favor, intenta de nuevo.");
+                return;
+            }
+            if (conversionExitosa == 0)
+            {
+                Console.WriteLine("Operación ha sido cancelada.");
+                return;
+            }
+            if (conversionExitosa < 1 || conversionExitosa > accountIdsToDelete.Count)
+            {
+                Console.WriteLine("Número de cuenta no válido. Por favor, intenta de nuevo.");
+                return;
+            }
+            int idCuentaParaEliminar;
+            idCuentaParaEliminar = accountIdsToDelete[conversionExitosa - 1];
+            Console.WriteLine("Estas seguro que quiere eliminar la cuenta SI o NO");
+            string confirmacionDeeliminar = Console.ReadLine();
+            if (confirmacionDeeliminar.ToUpper() != "SI")
+            {
+                Console.WriteLine("Operación de eliminación de cuenta cancelada.");
+                return;
+            }
+            using (var connection = new NpgsqlConnection(connectionString))
+            {
+                connection.Open();
+                string query = "SELECT accountid, accountname, accountbalance FROM bankaccount WHERE accountid != @idCuentaParaExcluir";
+                using (var command = new NpgsqlCommand(query, connection))
+                command.Parameters.AddWithValue("@idCuentaParaExcluir", idCuentaParaEliminar);
+                using (var reader = command.ExecuteReader())
+                {
+                    List<int> otrosIDdecuenta = new List<int>();
+                    while (reader.Read())
+                    {
+
+                        otrosIDdecuenta.Add((int)reader["accountid"]);
+                    }
+                    if (otrosIDdecuenta.Count > 0)
+                    {
+                        Console.WriteLine("transferir los fondos de la cuenta que va a eliminar a otra de sus cuentas existentes SI o no");
+                    }
+                    else
+                    {
+                        Console.WriteLine("como no tiene otras cuentas, el dinero de la cuenta que va a eliminar se perderá");
+                    }
+                    string transferirFondosRespuesta = Console.ReadLine();
+                    if (transferirFondosRespuesta.ToUpper() != "SI")
+                    {
+                        Console.WriteLine("Transferencia de fondos cancelada.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("a a listar las cuentas disponibles para la transferencia");
+                    }
+                    for (int i = 0; i < otrosIDdecuenta.Count; i++)
+                    {
+                        Console.WriteLine($"{i + 1}. Cuenta ID: {otrosIDdecuenta[i]}");
+                    }
+                    Console.WriteLine("ingrese el NÚMERO de la opción de la cuenta a la que desea transferir los fondos");
+                    string seleccionDestinoStr = Console.ReadLine();
+                    int seleccionDestinoIndex;
+                    if (!int.TryParse(seleccionDestinoStr, out seleccionDestinoIndex))
+                    {
+                        Console.WriteLine("Error: La entrada no es un número válido. Por favor, ingresa un número.");
+                        return;
+                    }
+                     if (seleccionDestinoIndex < 1 || seleccionDestinoIndex > otrosIDdecuenta.Count)
+                    {
+                         Console.WriteLine("Error: El número de cuenta de destino no es válido. Por favor, selecciona una de las opciones listadas.");
+                        return;
+                     
+
+                }
+                
+
+        }      
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
             int newDelete = int.Parse(Console.ReadLine()!);
         if (newDelete == 0)
         {
